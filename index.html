@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Peta Digital KKN Dusun Gesikan</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 15px 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1000;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+        }
+
+        .logo-container svg {
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+
+        .title-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .title-section h1 {
+            font-size: 1.6em;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .subtitle {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            padding: 5px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #searchInput {
+            background: transparent;
+            border: none;
+            padding: 10px 15px;
+            color: white;
+            font-size: 14px;
+            width: 250px;
+            outline: none;
+        }
+
+        #searchInput::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        #searchButton {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        #searchButton:hover {
+            background: linear-gradient(135deg, #2980b9, #1f5f8b);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            position: relative;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 2px 0 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            z-index: 999;
+            overflow-y: auto;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-280px);
+        }
+
+        .sidebar-toggle {
+            position: absolute;
+            top: 20px;
+            right: -45px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-toggle:hover {
+            background: white;
+            transform: translateX(2px);
+        }
+
+        .info-panel {
+            padding: 20px;
+        }
+
+        .info-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-left: 4px solid #3498db;
+        }
+
+        .info-card h3 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-card p {
+            color: #7f8c8d;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .stat-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: #7f8c8d;
+        }
+
+        #map {
+            flex: 1;
+            height: 100%;
+            position: relative;
+        }
+
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-button {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .control-button:hover {
+            background: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .loading-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #27ae60;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 3000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.error {
+            background: #e74c3c;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 12px 15px;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .title-section h1 {
+                font-size: 1.3em;
+            }
+            
+            .subtitle {
+                font-size: 0.8em;
+            }
+            
+            .search-container {
+                width: 100%;
+                max-width: 100%;
+            }
+            
+            #searchInput {
+                width: calc(100% - 100px);
+                min-width: 150px;
+            }
+            
+            #searchButton span {
+                display: none;
+            }
+            
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 85%;
+                max-width: 320px;
+                height: 100vh;
+                transform: translateX(-100%);
+                z-index: 2000;
+                box-shadow: 5px 0 20px rgba(0,0,0,0.3);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .sidebar.collapsed {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar-toggle {
+                position: fixed;
+                top: 50%;
+                left: 10px;
+                right: auto;
+                transform: translateY(-50%);
+                background: rgba(44, 62, 80, 0.9);
+                color: white;
+                border-radius: 50%;
+                width: 45px;
+                height: 45px;
+                z-index: 1500;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            }
+            
+            .sidebar-toggle:hover {
+                background: rgba(44, 62, 80, 1);
+                transform: translateY(-50%) scale(1.1);
+            }
+            
+            .map-controls {
+                top: 15px;
+                right: 15px;
+                flex-direction: row;
+                flex-wrap: wrap;
+                max-width: 200px;
+            }
+            
+            .control-button {
+                width: 35px;
+                height: 35px;
+                font-size: 0.9em;
+            }
+            
+            .info-panel {
+                padding: 15px;
+            }
+            
+            .info-card {
+                padding: 12px;
+                margin-bottom: 12px;
+            }
+            
+            .info-card h3 {
+                font-size: 1em;
+            }
+            
+            .info-card p {
+                font-size: 13px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            
+            .stat-item {
+                padding: 8px;
+            }
+            
+            .notification {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                padding: 12px 15px;
+                font-size: 14px;
+                transform: translateY(-100px);
+            }
+            
+            .notification.show {
+                transform: translateY(0);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .logo-container svg {
+                width: 35px;
+                height: 40px;
+            }
+            
+            .title-section {
+                flex-direction: row;
+                gap: 8px;
+                text-align: left;
+            }
+            
+            .title-section h1 {
+                font-size: 1.2em;
+            }
+            
+            .search-container {
+                padding: 3px;
+            }
+            
+            #searchInput {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+            
+            #searchButton {
+                padding: 8px 12px;
+            }
+            
+            .sidebar {
+                width: 90%;
+            }
+            
+            .info-card h3 {
+                font-size: 0.95em;
+            }
+            
+            .info-card p {
+                font-size: 12px;
+            }
+            
+            .stat-number {
+                font-size: 1.3em;
+            }
+            
+            .stat-label {
+                font-size: 0.75em;
+            }
+        }
+        
+        /* Touch-friendly improvements */
+        @media (hover: none) and (pointer: coarse) {
+            .control-button,
+            .sidebar-toggle,
+            #searchButton {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            .info-card {
+                margin-bottom: 15px;
+            }
+            
+            /* Prevent text selection on touch */
+            .header,
+            .sidebar-toggle,
+            .control-button {
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                -khtml-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <div class="title-section">
+                    <div class="logo-container">
+                        <img src="logo-kkn.png" alt="Logo Gesikan" width="35" height="50" style="border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
+                            <!-- Outer oval shape -->
+                            <ellipse cx="50" cy="60" rx="45" ry="55" fill="#f8f9fa" stroke="#2d5016" stroke-width="3"/>
+                            
+                            <!-- Sun rays -->
+                            <g stroke="#2d5016" stroke-width="2" stroke-linecap="round">
+                                <line x1="50" y1="8" x2="50" y2="18"/>
+                                <line x1="65" y1="12" x2="61" y2="20"/>
+                                <line x1="76" y1="22" x2="70" y2="28"/>
+                                <line x1="82" y1="35" x2="74" y2="39"/>
+                                <line x1="35" y1="12" x2="39" y2="20"/>
+                                <line x1="24" y1="22" x2="30" y2="28"/>
+                                <line x1="18" y1="35" x2="26" y2="39"/>
+                            </g>
+                            
+                            <!-- Mountain -->
+                            <path d="M15 45 L35 25 L50 35 L65 20 L85 45 Z" fill="#2d5016"/>
+                            <path d="M35 25 L45 30 L50 25 L50 35 Z" fill="#f8f9fa"/>
+                            
+                            <!-- Curved lines (fields) -->
+                            <g stroke="#2d5016" stroke-width="2" fill="none">
+                                <path d="M15 50 Q25 45 35 50 T55 50"/>
+                                <path d="M45 50 Q55 45 65 50 T85 50"/>
+                                <path d="M15 58 Q30 53 45 58 T75 58"/>
+                                <path d="M25 58 Q40 53 55 58 T85 58"/>
+                                <path d="M15 66 Q35 61 55 66 T85 66"/>
+                                <path d="M20 74 Q40 69 60 74 T80 74"/>
+                            </g>
+                            
+                            <!-- Handshake -->
+                            <g fill="#2d5016">
+                                <!-- Left hand -->
+                                <path d="M25 85 Q30 80 35 82 L40 85 Q42 87 40 90 L35 92 Q30 90 25 92 Q23 90 25 85"/>
+                                <!-- Right hand -->
+                                <path d="M75 85 Q70 80 65 82 L60 85 Q58 87 60 90 L65 92 Q70 90 75 92 Q77 90 75 85"/>
+                                <!-- Connection -->
+                                <ellipse cx="50" cy="88" rx="15" ry="4"/>
+                                <!-- Fingers detail -->
+                                <rect x="35" y="83" width="2" height="6" rx="1"/>
+                                <rect x="38" y="82" width="2" height="7" rx="1"/>
+                                <rect x="62" y="82" width="2" height="7" rx="1"/>
+                                <rect x="65" y="83" width="2" height="6" rx="1"/>
+                            </g>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1>Peta Digital Dusun Gesikan</h1>
+                        <div class="subtitle">Ngluwar, Magelang, Jawa Tengah</div>
+                    </div>
+                </div>
+                <div class="search-container">
+                    <input type="text" id="searchInput" placeholder="Cari lokasi atau tempat...">
+                    <button id="searchButton">
+                        <i class="fas fa-search"></i>
+                        <span>Cari</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar" id="sidebar">
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                
+                <div class="info-panel">
+                    <div class="info-card">
+                        <h3><i class="fas fa-info-circle"></i> Informasi Dusun</h3>
+                        <p>Dusun Gesikan merupakan salah satu dusun di Desa Ngluwar, Kecamatan Ngluwar, Kabupaten Magelang. Dusun ini memiliki karakteristik wilayah yang unik dengan berbagai fasilitas dan tempat penting.</p>
+                    </div>
+
+                    <div class="info-card">
+                        <h3><i class="fas fa-chart-bar"></i> Statistik Wilayah</h3>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-number" id="totalMarkers">-</div>
+                                <div class="stat-label">Total Lokasi</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">1</div>
+                                <div class="stat-label">Dusun</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-card">
+                        <h3><i class="fas fa-map"></i> Panduan Penggunaan</h3>
+                        <p>• Gunakan kotak pencarian untuk mencari lokasi<br>
+                        • Klik pada marker untuk melihat informasi detail<br>
+                        • Gunakan scroll mouse untuk zoom in/out<br>
+                        • Drag peta untuk navigasi</p>
+                    </div>
+
+                    <div class="info-card">
+                        <h3><i class="fas fa-graduation-cap"></i> Program KKN</h3>
+                        <p>Peta digital ini dibuat sebagai bagian dari program Kuliah Kerja Nyata (KKN) untuk membantu dokumentasi dan pemetaan wilayah Dusun Gesikan.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="map">
+                <div class="map-controls">
+                    <button class="control-button" id="zoomIn" title="Zoom In">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button class="control-button" id="zoomOut" title="Zoom Out">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <button class="control-button" id="resetView" title="Reset View">
+                        <i class="fas fa-home"></i>
+                    </button>
+                    <button class="control-button" id="fullscreen" title="Fullscreen">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+                
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification">
+        <span id="notificationText"></span>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-kmz@latest/dist/leaflet-kmz.js"></script>
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    <script>
+        // Inisialisasi peta
+        const map = L.map('map', {
+            zoomControl: false
+        }).setView([-7.632, 110.200], 15);
+
+        // Tambahkan Tile Layer dengan beberapa pilihan
+        const baseLayers = {
+            'OpenStreetMap': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }),
+            'Satellite': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '&copy; <a href="https://www.esri.com/">Esri</a>'
+            })
+        };
+
+        baseLayers['OpenStreetMap'].addTo(map);
+        L.control.layers(baseLayers).addTo(map);
+
+        let batasGesikanLayer;
+        let titikLokasiLayer;
+        let allMarkers = [];
+
+        // UI Elements
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notificationText');
+        const totalMarkersEl = document.getElementById('totalMarkers');
+
+        // Sidebar toggle functionality
+        sidebarToggle.addEventListener('click', () => {
+            const isMobile = window.innerWidth <= 768;
+            
+            if (isMobile) {
+                sidebar.classList.toggle('show');
+                const icon = sidebarToggle.querySelector('i');
+                if (sidebar.classList.contains('show')) {
+                    icon.className = 'fas fa-times';
+                } else {
+                    icon.className = 'fas fa-bars';
+                }
+            } else {
+                sidebar.classList.toggle('collapsed');
+                const icon = sidebarToggle.querySelector('i');
+                if (sidebar.classList.contains('collapsed')) {
+                    icon.className = 'fas fa-chevron-right';
+                } else {
+                    icon.className = 'fas fa-chevron-left';
+                }
+            }
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768) {
+                if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+                    sidebar.classList.remove('show');
+                    const icon = sidebarToggle.querySelector('i');
+                    icon.className = 'fas fa-bars';
+                }
+            }
+        });
+
+        // Map controls
+        document.getElementById('zoomIn').addEventListener('click', () => map.zoomIn());
+        document.getElementById('zoomOut').addEventListener('click', () => map.zoomOut());
+        document.getElementById('resetView').addEventListener('click', () => {
+            if (batasGesikanLayer) {
+                map.fitBounds(batasGesikanLayer.getBounds());
+            }
+        });
+        document.getElementById('fullscreen').addEventListener('click', () => {
+            if (map.isFullscreen()) {
+                map.exitFullscreen();
+            } else {
+                map.enterFullscreen();
+            }
+        });
+
+        // Notification system
+        function showNotification(message, isError = false) {
+            notificationText.textContent = message;
+            notification.className = `notification ${isError ? 'error' : ''} show`;
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Loading overlay
+        function showLoading(show = true) {
+            if (show) {
+                loadingOverlay.classList.add('show');
+            } else {
+                loadingOverlay.classList.remove('show');
+            }
+        }
+
+        // FUNGSI: Memuat dan menampilkan batas wilayah dari GeoJSON
+        async function loadBatasWilayahGeoJSON() {
+            showLoading(true);
+            try {
+                const response = await fetch('data/peta_gesikan.geojson');
+                const data = await response.json();
+
+                batasGesikanLayer = L.geoJSON(data, {
+                    style: {
+                        color: '#e74c3c',
+                        weight: 3,
+                        fillOpacity: 0.1,
+                        fillColor: '#3498db'
+                    }
+                }).addTo(map);
+
+                const bounds = batasGesikanLayer.getBounds();
+                if (bounds.isValid()) {
+                    map.fitBounds(bounds);
+                }
+
+                highlightInsideBoundary(batasGesikanLayer);
+                loadTitikLokasiKMZ();
+
+                showNotification('Batas wilayah berhasil dimuat');
+                console.log('Batas wilayah GeoJSON dimuat dan efek highlight ditambahkan.');
+            } catch (error) {
+                console.error('Gagal memuat peta_gesikan.geojson:', error);
+                showNotification('Gagal memuat batas wilayah Dusun Gesikan', true);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // FUNGSI: Masking area luar batas agar gelap
+        function highlightInsideBoundary(boundaryLayer) {
+            const bounds = map.getBounds();
+            const outerBounds = [
+                [bounds.getSouthWest().lat - 1, bounds.getSouthWest().lng - 1],
+                [bounds.getNorthEast().lat + 1, bounds.getSouthWest().lng - 1],
+                [bounds.getNorthEast().lat + 1, bounds.getNorthEast().lng + 1],
+                [bounds.getSouthWest().lat - 1, bounds.getNorthEast().lng + 1]
+            ];
+
+            boundaryLayer.eachLayer(function(layer) {
+                if (layer instanceof L.Polygon || layer instanceof L.Polyline) {
+                    const innerCoords = layer.getLatLngs()[0].map(latlng => [latlng.lng, latlng.lat]);
+
+                    const mask = {
+                        type: "Feature",
+                        geometry: {
+                            type: "Polygon",
+                            coordinates: [
+                                outerBounds.map(p => [p[1], p[0]]),
+                                innerCoords
+                            ]
+                        }
+                    };
+
+                    L.geoJSON(mask, {
+                        style: {
+                            color: 'transparent',
+                            weight: 0,
+                            fillColor: 'black',
+                            fillOpacity: 0.3
+                        }
+                    }).addTo(map);
+                }
+            });
+        }
+
+        // FUNGSI: Memuat dan menampilkan titik lokasi dari KMZ
+        async function loadTitikLokasiKMZ() {
+            try {
+                const kmzLayer = L.kmzLayer();
+
+                kmzLayer.on('load', function (e) {
+                    const layerGroup = e.layer;
+                    let wilayahPolygon = null;
+
+                    batasGesikanLayer.eachLayer(layer => {
+                        if (layer instanceof L.Polygon && !wilayahPolygon) {
+                            wilayahPolygon = layer.toGeoJSON();
+                        }
+                    });
+
+                    if (!wilayahPolygon) {
+                        console.warn("Polygon wilayah tidak ditemukan.");
+                        return;
+                    }
+
+                    let markerCount = 0;
+                    layerGroup.eachLayer(layer => {
+                        if (layer instanceof L.Marker) {
+                            const latlng = layer.getLatLng();
+                            const point = turf.point([latlng.lng, latlng.lat]);
+
+                            if (turf.booleanPointInPolygon(point, wilayahPolygon)) {
+                                map.addLayer(layer);
+                                allMarkers.push(layer);
+                                markerCount++;
+                            }
+                        }
+                    });
+
+                    totalMarkersEl.textContent = markerCount;
+                    titikLokasiLayer = layerGroup;
+                    
+                    showNotification(`${markerCount} lokasi berhasil dimuat`);
+                    console.log('Titik lokasi dari KMZ dimuat dan difilter oleh polygon.');
+                });
+
+                kmzLayer.on('error', function (e) {
+                    console.error('Error loading titik_lokasi.kmz:', e);
+                    showNotification('Gagal memuat titik lokasi dari KMZ', true);
+                });
+
+                kmzLayer.load('data/titik_lokasi.kmz');
+
+            } catch (error) {
+                console.error('Unexpected error in loadTitikLokasiKMZ:', error);
+                showNotification('Terjadi kesalahan saat memuat titik lokasi KMZ', true);
+            }
+        }
+
+        // Search functionality
+        searchButton.addEventListener('click', performSearch);
+        searchInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        function performSearch() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            
+            if (!searchTerm) {
+                showNotification('Masukkan kata kunci pencarian', true);
+                return;
+            }
+
+            let found = false;
+            allMarkers.forEach(marker => marker.closePopup());
+
+            for (const marker of allMarkers) {
+                const props = marker.feature?.properties || {};
+                const name = props.name?.toLowerCase() || '';
+                const description = props.description?.toLowerCase() || '';
+
+                if (name.includes(searchTerm) || description.includes(searchTerm)) {
+                    map.flyTo(marker.getLatLng(), 18);
+                    marker.openPopup();
+                    found = true;
+                    showNotification(`Lokasi "${searchTerm}" ditemukan`);
+                    break;
+                }
+            }
+
+            if (!found) {
+                showNotification('Lokasi tidak ditemukan', true);
+            }
+        }
+
+        // Initialize map when ready
+        map.whenReady(function () {
+            loadBatasWilayahGeoJSON();
+        });
+
+        // Handle responsive sidebar
+        function handleResize() {
+            const isMobile = window.innerWidth <= 768;
+            const icon = sidebarToggle.querySelector('i');
+            
+            if (isMobile) {
+                sidebar.classList.remove('collapsed');
+                sidebar.classList.remove('show');
+                icon.className = 'fas fa-bars';
+            } else {
+                sidebar.classList.remove('show');
+                // Untuk desktop, biarkan sidebar terbuka secara default
+                sidebar.classList.remove('collapsed');
+                icon.className = 'fas fa-chevron-left';
+            }
+        }
+
+        window.addEventListener('resize', handleResize);
+        handleResize();
+    </script>
+</body>
+</html>
